@@ -1,9 +1,0 @@
-{
-    "id": "pane-zoom-levels",
-    "name": "Pane Zoom Levels",
-    "version": "1.0.0",
-    "minAppVersion": "0.15.0",
-    "description": "Set different zoom levels for different panes",
-    "author": "Your Name",
-    "isDesktopOnly": false
-}
