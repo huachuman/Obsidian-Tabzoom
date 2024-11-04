@@ -5,6 +5,9 @@ Zoom in/out of individual panes without affecting the entire interface
 
 Create minimap-like views by linking a zoomed-out version of your current note
 
+# Demo
+![Tabzoom](https://github.com/user-attachments/assets/94a01d00-a52f-4aaf-8f46-19f386c40e2d)
+
 # Usage
 
 Use the command palette to access zoom menu "Set Zoom Level for Current Pane"
@@ -15,7 +18,7 @@ Link panes with different zoom levels for a minimap-like experience
 
 # Installation
 
-Until this plugin is ready for wider release, install it via the BRAT plugin https://github.com/TfTHacker/obsidian42-brat
+Until this plugin is ready for wider release, install it via the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat) 
 
 # Note
 This is a very primitive implementation of an individual tab zoom feature. There is lots of room for improvement. There will probably be many changes/enhancements to come. Feel free to contribute or open an issue.
