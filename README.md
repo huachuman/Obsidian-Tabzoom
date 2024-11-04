@@ -12,7 +12,7 @@ Create minimap-like views by linking a zoomed-out version of your current note
 
 Use the command palette to access zoom menu "Set Zoom Level for Current Pane"
 
-Or assign a hotkey to invoke it in your Obsidian hotkey settings (preferred method)
+Or assign a hotkey like Alt+Z to invoke it in your Obsidian hotkey settings (preferred method)
 
 Link panes with different zoom levels for a minimap-like experience
 
