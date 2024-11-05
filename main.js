@@ -3,98 +3,133 @@ const { Plugin } = require('obsidian');
 class PaneZoomLevelsPlugin extends Plugin {
     async onload() {
         this.zoomLevels = new Map();
+        this.zoomStep = 0.1; // 10% zoom step
 
-        // Add command to set zoom level
+        // Add command to set custom zoom level
         this.addCommand({
             id: 'set-pane-zoom',
-            name: 'Set Zoom Level for Current Pane',
+            name: 'Set Custom Zoom Level for Current Pane',
             callback: async () => {
                 const leaf = this.app.workspace.activeLeaf;
                 if (!leaf) return;
 
-                const zoomLevels = ['zoom-10', 'zoom-20', 'zoom-30', 'zoom-40', 'zoom-50', 'zoom-60', 'zoom-70', 'zoom-80', 'zoom-90','zoom-100'];
-                const selected = await this.showZoomSelector(zoomLevels);
-                
-                if (selected) {
-                    this.setZoomForPane(leaf, selected);
+                const currentZoom = this.zoomLevels.get(leaf.id)?.scale || 1;
+                const input = await this.promptForZoom(currentZoom);
+                if (input !== null) {
+                    this.setZoomForPane(leaf, { scale: input / 100 });
                 }
             }
         });
 
+        // Add command to zoom in
+        this.addCommand({
+            id: 'zoom-in',
+            name: 'Zoom In',
+            callback: () => this.incrementalZoom(true),
+            hotkeys: [{ modifiers: ["Alt"], key: "=" }]
+        });
+
+        // Add command to zoom out
+        this.addCommand({
+            id: 'zoom-out',
+            name: 'Zoom Out',
+            callback: () => this.incrementalZoom(false),
+            hotkeys: [{ modifiers: ["Alt"], key: "-" }]
+        });
+
         // Register for layout change events
         this.registerEvent(
-            this.app.workspace.on('layout-change', () => {
-                this.reapplyZoomLevels();
-            })
+            this.app.workspace.on('layout-change', this.reapplyZoomLevels.bind(this))
         );
 
         // Register for file open events
         this.registerEvent(
-            this.app.workspace.on('file-open', () => {
-                this.reapplyZoomLevels();
-            })
+            this.app.workspace.on('file-open', this.reapplyZoomLevels.bind(this))
         );
     }
 
-    async showZoomSelector(options) {
-        const modal = new ZoomSelectorModal(this.app, options);
-        return new Promise(resolve => {
-            modal.onChooseItem = (item) => {
-                resolve(item);
+    async promptForZoom(currentZoom) {
+        const input = await new Promise(resolve => {
+            const modal = new this.app.Modal();
+            modal.contentEl.createEl('h2', { text: 'Set Zoom Level' });
+            const inputEl = modal.contentEl.createEl('input', {
+                type: 'number',
+                value: Math.round(currentZoom * 100),
+                placeholder: 'Enter zoom level (e.g., 150 for 150%)'
+            });
+            const buttonEl = modal.contentEl.createEl('button', { text: 'Set' });
+            buttonEl.onclick = () => {
                 modal.close();
+                resolve(inputEl.value);
             };
             modal.open();
         });
+
+        if (!input) return null;
+        const numericInput = parseFloat(input);
+        return isNaN(numericInput) ? null : Math.max(10, numericInput); // Minimum 10% zoom
     }
 
-    setZoomForPane(leaf, zoomClass) {
+    incrementalZoom(zoomIn) {
+        const leaf = this.app.workspace.activeLeaf;
+        if (!leaf) return;
+
+        const currentZoom = this.zoomLevels.get(leaf.id)?.scale || 1;
+        const newZoom = zoomIn ? currentZoom + this.zoomStep : currentZoom - this.zoomStep;
+        this.setZoomForPane(leaf, { scale: Math.max(0.1, newZoom) }); // Minimum 10% zoom
+    }
+
+    setZoomForPane(leaf, zoomLevel) {
         const leafId = leaf.id;
-        
-        // Remove any existing zoom classes
-        const container = leaf.view.containerEl;
-        container.classList.remove('zoom-10', 'zoom-20', 'zoom-30', 'zoom-40', 'zoom-50', 'zoom-60', 'zoom-70', 'zoom-80', 'zoom-90','zoom-100');
-        
-        // Add new zoom class
-        container.classList.add(zoomClass);
-        
+        const contentEl = leaf.view.contentEl;
+
+        // Find the actual content container
+        const contentContainer = contentEl.querySelector('.markdown-preview-view, .markdown-source-view');
+
+        if (!contentContainer) return;
+
+        // Remove transform from any existing zoom level
+        contentContainer.style.transform = '';
+        contentContainer.style.transformOrigin = '';
+
+        // Apply new zoom level
+        if (zoomLevel) {
+            contentContainer.style.transform = `scale(${zoomLevel.scale})`;
+            contentContainer.style.transformOrigin = 'top left';
+            
+            // Adjust the container size to accommodate the scaled content
+            contentContainer.style.width = `${100 / zoomLevel.scale}%`;
+            contentContainer.style.height = `${100 / zoomLevel.scale}%`;
+        } else {
+            // Reset the container size
+            contentContainer.style.width = '';
+            contentContainer.style.height = '';
+        }
+
         // Store the zoom level for this pane
-        this.zoomLevels.set(leafId, zoomClass);
+        this.zoomLevels.set(leafId, zoomLevel);
     }
 
     reapplyZoomLevels() {
         this.app.workspace.iterateAllLeaves(leaf => {
-            const zoomClass = this.zoomLevels.get(leaf.id);
-            if (zoomClass) {
-                leaf.view.containerEl.classList.remove('zoom-10', 'zoom-20', 'zoom-30', 'zoom-40', 'zoom-50', 'zoom-60', 'zoom-70', 'zoom-80', 'zoom-90','zoom-100');
-                leaf.view.containerEl.classList.add(zoomClass);
+            const zoomLevel = this.zoomLevels.get(leaf.id);
+            if (zoomLevel) {
+                this.setZoomForPane(leaf, zoomLevel);
             }
         });
     }
 
     onunload() {
-        // Remove all zoom classes when plugin is disabled
+        // Remove all zoom transforms when plugin is disabled
         this.app.workspace.iterateAllLeaves(leaf => {
-            leaf.view.containerEl.classList.remove('zoom-10', 'zoom-20', 'zoom-30', 'zoom-40', 'zoom-50', 'zoom-60', 'zoom-70', 'zoom-80', 'zoom-90','zoom-100');
+            const contentContainer = leaf.view.contentEl.querySelector('.markdown-preview-view, .markdown-source-view');
+            if (contentContainer) {
+                contentContainer.style.transform = '';
+                contentContainer.style.transformOrigin = '';
+                contentContainer.style.width = '';
+                contentContainer.style.height = '';
+            }
         });
-    }
-}
-
-class ZoomSelectorModal extends require('obsidian').FuzzySuggestModal {
-    constructor(app, options) {
-        super(app);
-        this.options = options;
-    }
-
-    getItems() {
-        return this.options;
-    }
-
-    getItemText(item) {
-        return item.replace('zoom-', '') + '%';
-    }
-
-    onChooseItem(item) {
-        return item;
     }
 }
 
