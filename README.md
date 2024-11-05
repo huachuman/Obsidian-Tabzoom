@@ -5,9 +5,6 @@ Zoom in/out of individual panes without affecting the entire interface
 
 Create minimap-like views by linking a zoomed-out version of your current note
 
-# Demo
-![Tabzoom](https://github.com/user-attachments/assets/94a01d00-a52f-4aaf-8f46-19f386c40e2d)
-
 # Usage
 
 Use the command palette to access zoom menu "Set Zoom Level for Current Pane"
