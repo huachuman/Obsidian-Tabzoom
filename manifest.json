@@ -1,7 +1,7 @@
 {
     "id": "obsidian-tabzoom",
     "name": "Tabzoom!",
-    "version": "v0.1.1",
+    "version": "v0.1.2",
     "minAppVersion": "0.15.0",
     "description": "Set different zoom levels for different panes",
     "author": "Huachuman",
