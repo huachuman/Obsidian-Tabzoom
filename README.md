@@ -4,6 +4,7 @@
 Zoom in/out of individual panes without affecting the entire interface
 
 Create minimap-like views by linking a zoomed-out version of your current note
+edit: Dedicated minimap plugin in the works
 
 # Usage
 
